@@ -3,14 +3,22 @@ spring:
     name: timesheet management
 
   datasource:
-    url: jdbc:mysql://localhost:3306/timesheet_management
-    username: root
-    password: root@2479
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://localhost:5432/timesheet_management
+    username: admin
+    password: admin123
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
