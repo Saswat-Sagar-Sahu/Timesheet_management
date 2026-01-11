@@ -1,5 +1,6 @@
 package com.timesheet.management.dto;
 
+import com.timesheet.management.entity.Timesheet;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,12 +13,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UpdateTimesheetRequest {
-    private Integer timesheetId;
+public class TimesheetFullDTO {
+    private Integer id;
     private Integer contractorId;
     private LocalDate startDate;
+    private Timesheet.Status status;
+    private String managerComment;
     private List<TimesheetEntryDTO> entries;
-    // For PATCH semantics: entries to add and entry ids to remove
-    private List<TimesheetEntryDTO> addEntries;
-    private List<Integer> removeEntryIds;
 }
+

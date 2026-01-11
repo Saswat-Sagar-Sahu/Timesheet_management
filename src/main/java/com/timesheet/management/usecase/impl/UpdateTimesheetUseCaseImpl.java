@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @AllArgsConstructor
@@ -50,7 +51,6 @@ public class UpdateTimesheetUseCaseImpl implements UpdateTimesheetUseCase {
 
         Timesheet timesheet = tsOpt.get();
 
-        // business rule: cannot update when submitted or approved
         if (timesheet.getStatus() == Timesheet.Status.SUBMITTED || timesheet.getStatus() == Timesheet.Status.APPROVED) {
             return UpdateTimesheetResponse.builder()
                     .status(false)
@@ -101,16 +101,79 @@ public class UpdateTimesheetUseCaseImpl implements UpdateTimesheetUseCase {
                     entries.add(entry);
                 }
                 timesheet.setEntries(entries);
+            } else {
+                // Patch semantics: addEntries and removeEntryIds
+                if ((request.getAddEntries() != null && !request.getAddEntries().isEmpty()) || (request.getRemoveEntryIds() != null && !request.getRemoveEntryIds().isEmpty())) {
+                    // Ensure existing entries list is mutable
+                    List<TimesheetEntry> existing = timesheet.getEntries() == null ? new ArrayList<>() : new ArrayList<>(timesheet.getEntries());
+
+                    // Remove entries by id
+                    if (request.getRemoveEntryIds() != null && !request.getRemoveEntryIds().isEmpty()) {
+                        existing.removeIf(e -> request.getRemoveEntryIds().contains(e.getId()));
+                    }
+
+                    // Add new entries
+                    if (request.getAddEntries() != null && !request.getAddEntries().isEmpty()) {
+                        for (TimesheetEntryDTO dto : request.getAddEntries()) {
+                            if (dto.getProjectId() == null || dto.getActivityCode() == null || dto.getDate() == null || dto.getHoursWorked() == null) {
+                                return UpdateTimesheetResponse.builder()
+                                        .status(false)
+                                        .message("Each add entry must have projectId, activityCode, date and hoursWorked")
+                                        .errorCode(TimeSheetErrorCode.E_002)
+                                        .build();
+                            }
+
+                            var projectOpt = projectRepository.findById(dto.getProjectId());
+                            if (projectOpt.isEmpty()) {
+                                return UpdateTimesheetResponse.builder()
+                                        .status(false)
+                                        .message("Project not found for id: " + dto.getProjectId())
+                                        .errorCode(TimeSheetErrorCode.E_003)
+                                        .build();
+                            }
+                            var activityOpt = activityRepository.findById(dto.getActivityCode());
+                            if (activityOpt.isEmpty()) {
+                                return UpdateTimesheetResponse.builder()
+                                        .status(false)
+                                        .message("Activity not found for code: " + dto.getActivityCode())
+                                        .errorCode(TimeSheetErrorCode.E_003)
+                                        .build();
+                            }
+
+                            TimesheetEntry entry = new TimesheetEntry();
+                            entry.setProject(projectOpt.get());
+                            entry.setActivity(activityOpt.get());
+                            entry.setDate(dto.getDate());
+                            entry.setHoursWorked(dto.getHoursWorked());
+                            entry.setComments(dto.getComments());
+                            entry.setTimesheet(timesheet);
+                            existing.add(entry);
+                        }
+                    }
+
+                    timesheet.setEntries(existing);
+                }
             }
 
             Timesheet saved = timesheetRepository.save(timesheet);
+
+            List<TimesheetEntryDTO> savedEntries = null;
+            if (saved.getEntries() != null) {
+                savedEntries = saved.getEntries().stream().map(e -> TimesheetEntryDTO.builder()
+                        .projectId(e.getProject() != null ? e.getProject().getId() : null)
+                        .activityCode(e.getActivity() != null ? e.getActivity().getCode() : null)
+                        .date(e.getDate())
+                        .hoursWorked(e.getHoursWorked())
+                        .comments(e.getComments())
+                        .build()).collect(Collectors.toList());
+            }
 
             TimesheetDTO result = TimesheetDTO.builder()
                     .id(saved.getId())
                     .contractorId(saved.getContractor().getId())
                     .startDate(saved.getStartDate())
                     .status(saved.getStatus())
-                    .entries(request.getEntries())
+                    .entries(savedEntries)
                     .build();
 
             return UpdateTimesheetResponse.builder()
@@ -130,4 +193,3 @@ public class UpdateTimesheetUseCaseImpl implements UpdateTimesheetUseCase {
         }
     }
 }
-

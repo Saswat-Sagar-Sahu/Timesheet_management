@@ -5,6 +5,7 @@ import com.timesheet.management.usecase.AddActivityUseCase;
 import com.timesheet.management.usecase.AddProjectActivityUseCase;
 import com.timesheet.management.dto.AddProjectActivityRequest;
 import com.timesheet.management.dto.AddActivityRequest;
+import com.timesheet.management.usecase.ActivityQueryUseCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +22,9 @@ public class ActivityController {
     @Autowired
     private AddProjectActivityUseCase addProjectActivityUseCase;
 
+    @Autowired
+    private ActivityQueryUseCase activityQueryUseCase;
+
     @PostMapping
     public ResponseEntity<?> addActivity(@RequestBody AddActivityRequest request) {
         var resp = addActivityUseCase.execute(request);
@@ -35,6 +39,24 @@ public class ActivityController {
         var resp = addProjectActivityUseCase.execute(request);
         if (resp.isStatus()) {
             return ResponseEntity.status(HttpStatus.CREATED).body(resp.getProjectActivity());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(new BaseResponse(false, resp.getMessage()));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> listActivities() {
+        var resp = activityQueryUseCase.listAll();
+        if (resp.isStatus()) {
+            return ResponseEntity.ok(resp.getActivities());
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).contentType(MediaType.APPLICATION_JSON).body(new BaseResponse(false, resp.getMessage()));
+    }
+
+    @GetMapping("/{code}")
+    public ResponseEntity<?> getActivity(@PathVariable Integer code) {
+        var resp = activityQueryUseCase.getByCode(code);
+        if (resp.isStatus()) {
+            return ResponseEntity.ok(resp.getActivity());
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(new BaseResponse(false, resp.getMessage()));
     }

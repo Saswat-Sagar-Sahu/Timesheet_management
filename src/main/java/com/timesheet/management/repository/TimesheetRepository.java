@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -26,4 +27,8 @@ public interface TimesheetRepository extends JpaRepository<Timesheet, Integer> {
         ORDER BY u.id, t.startDate desc
     """)
     List<ProjectSummaryDTO> getProjectSummary(@Param("projectId") Integer projectId);
+
+    List<Timesheet> findByContractor_Id(Integer contractorId);
+
+    List<Timesheet> findByContractor_IdAndStartDate(Integer contractorId, LocalDate startDate);
 }
