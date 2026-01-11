@@ -5,16 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AddUserRequest {
-    private String empId;
+public class AddActivityRequest {
+    private Integer code;
     private String name;
-    private String username;
-    private String role; // CONTRACTOR, MANAGER, ADMIN
-    private LocalDate dob; // date of birth
+    private String description;
 }

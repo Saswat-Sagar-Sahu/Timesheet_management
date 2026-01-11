@@ -1,9 +1,15 @@
 package com.timesheet.management.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "project_activities")
+@Getter
+@Setter
+@NoArgsConstructor
 public class ProjectActivity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
